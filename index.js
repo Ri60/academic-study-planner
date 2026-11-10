@@ -139,6 +139,25 @@ app.get('/study-progress', async (req, res) => {
             ORDER BY total_study_minutes DESC, course_id
         `);
 
+        const { rows: completion } = await pool.query(`
+            SELECT title, total_tasks, completed_tasks,
+                   completion_percentage, task_status
+            FROM TaskCompletionPerAssessment
+            ORDER BY title, assessment_id
+        `);
+
+        const completionRows = completion.map(row => `
+            <tr>
+                <td>${escapeHtml(row.title)}</td>
+                <td>${escapeHtml(row.total_tasks)}</td>
+                <td>${escapeHtml(row.completed_tasks)}</td>
+                <td>${row.completion_percentage == null
+                    ? 'N/A'
+                    : `${escapeHtml(row.completion_percentage)}%`}</td>
+                <td>${escapeHtml(row.task_status)}</td>
+            </tr>
+        `).join('');
+
         const courseRows = courses.map(course => `
             <tr>
                 <td>${escapeHtml(course.student_id)}</td>
@@ -173,6 +192,20 @@ app.get('/study-progress', async (req, res) => {
                     </thead>
                     <tbody>${courseRows || '<tr><td colspan="4">No courses found.</td></tr>'}</tbody>
                 </table>
+
+                <h2>Task Completion per Assessment</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Assessment</th>
+                            <th scope="col">Total tasks</th>
+                            <th scope="col">Completed</th>
+                            <th scope="col">Completion</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${completionRows || '<tr><td colspan="5">No assessments found.</td></tr>'}</tbody>
+                </table>
             </body>
             </html>
         `);
@@ -185,5 +218,6 @@ app.get('/study-progress', async (req, res) => {
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
 
