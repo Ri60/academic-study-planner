@@ -48,6 +48,23 @@ app.get('/', async (req, res) => {
             </tr>
         `).join('');
 
+        const { rows: priorities } = await pool.query(`
+            SELECT course_name, title, due_date::text AS due_date,
+                   days_remaining, priority_score
+            FROM AssessmentPriority
+            ORDER BY priority_score DESC, due_date, assessment_id
+        `);
+
+        const priorityRows = priorities.map(row => `
+            <tr>
+                <td>${escapeHtml(row.course_name)}</td>
+                <td>${escapeHtml(row.title)}</td>
+                <td>${escapeHtml(row.due_date)}</td>
+                <td>${escapeHtml(row.days_remaining)}</td>
+                <td>${escapeHtml(row.priority_score)}</td>
+            </tr>
+        `).join('');
+
         const assessmentRows = assessments.map(row => `
             <tr>
                 <td>${escapeHtml(`${row.first_name} ${row.last_name}`)}</td>
@@ -77,6 +94,21 @@ app.get('/', async (req, res) => {
             <body>
                 <h1>Academic Study Planner</h1>
                 <nav><a href="/study-progress">Study Progress</a></nav>
+
+                <h2>Assessment Priority</h2>
+                <p>Priority score = assessment weight ÷ (days remaining + 1).</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Course</th>
+                            <th scope="col">Assessment</th>
+                            <th scope="col">Due date</th>
+                            <th scope="col">Days remaining</th>
+                            <th scope="col">Priority score</th>
+                        </tr>
+                    </thead>
+                    <tbody>${priorityRows || '<tr><td colspan="5">No upcoming assessments with unfinished tasks.</td></tr>'}</tbody>
+                </table>
 
                 <h2>Upcoming Assessments</h2>
                 ${upcoming.length ? `
@@ -218,6 +250,7 @@ app.get('/study-progress', async (req, res) => {
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
 
 
