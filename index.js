@@ -93,7 +93,7 @@ app.get('/', async (req, res) => {
             </head>
             <body>
                 <h1>Academic Study Planner</h1>
-                <nav><a href="/study-progress">Study Progress</a></nav>
+                <nav><a href="/study-progress">Study Progress</a> | <a href="/assessment-reports">Assessment Reports</a></nav>
 
                 <h2>Assessment Priority</h2>
                 <p>Priority score = assessment weight ÷ (days remaining + 1).</p>
@@ -247,9 +247,94 @@ app.get('/study-progress', async (req, res) => {
     }
 });
 
+app.get('/assessment-reports', async (req, res) => {
+    const reports = [
+        {
+            title: 'Assessments Exceeding Every Course Average',
+            headers: ['Student ID', 'Course', 'Assessment', 'Weight (%)'],
+            sql: `SELECT student_id, course_name, title, weight_percentage
+                  FROM AssessmentsExceedingCourseAverages
+                  ORDER BY student_id, course_name, assessment_id`
+        },
+        {
+            title: 'Assessments Above Their Own Course Average',
+            headers: ['Course ID', 'Assessment', 'Weight (%)', 'Due date'],
+            sql: `SELECT course_id, title, weight_percentage, due_date::text
+                  FROM AssessmentsAboveCourseAverage
+                  ORDER BY course_id, assessment_id`
+        },
+        {
+            title: 'Assessment and Study Session Coverage',
+            headers: ['Assessment', 'Session ID', 'Session date', 'Minutes', 'Productivity'],
+            sql: `SELECT title, session_id, session_date::text, duration_min, productivity
+                  FROM AssessmentStudySessionCoverage
+                  ORDER BY assessment_id NULLS LAST, session_id NULLS LAST`
+        },
+        {
+            title: 'Assessments With Tasks or Study Sessions',
+            headers: ['Course ID', 'Assessment', 'Weight (%)', 'Due date'],
+            sql: `SELECT course_id, title, weight_percentage, due_date::text
+                  FROM AssessmentsWithActivity
+                  ORDER BY course_id, assessment_id`
+        }
+    ];
+
+    try {
+        const sections = await Promise.all(reports.map(async report => {
+            const { rows } = await pool.query({
+                text: report.sql,
+                rowMode: 'array'
+            });
+
+            const headers = report.headers.map(header =>
+                `<th scope="col">${escapeHtml(header)}</th>`
+            ).join('');
+
+            const body = rows.map(row => {
+                const cells = row.map(value =>
+                    `<td>${escapeHtml(value ?? '-')}</td>`
+                ).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+
+            return `
+                <h2>${escapeHtml(report.title)}</h2>
+                <p>${rows.length} results</p>
+                <table>
+                    <thead><tr>${headers}</tr></thead>
+                    <tbody>${body || `<tr><td colspan="${report.headers.length}">No results.</td></tr>`}</tbody>
+                </table>
+            `;
+        }));
+
+        res.send(`
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Assessment Reports | Academic Study Planner</title>
+            </head>
+            <body>
+                <nav aria-label="Main navigation">
+                    <a href="/">Assessments</a> |
+                    <a href="/study-progress">Study Progress</a>
+                </nav>
+                <h1>Assessment Reports</h1>
+                ${sections.join('')}
+            </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('Could not load assessment reports:', error.message);
+        res.status(500).send('Could not load assessment reports. Check the server terminal.');
+    }
+});
+
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
 
 
