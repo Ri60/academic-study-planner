@@ -19,12 +19,37 @@ function escapeHtml(value) {
 
 app.get('/', async (req, res) => {
     try {
+        const search = typeof req.query.q === 'string'
+            ? req.query.q.trim().slice(0, 100)
+            : '';
+        const courseId = typeof req.query.course === 'string'
+            ? req.query.course.trim().slice(0, 20)
+            : '';
+
         const { rows: assessments } = await pool.query(`
             SELECT first_name, last_name, course_name, title,
                    weight_percentage, due_date::text AS due_date
             FROM StudentAssessmentOverview
+            WHERE ($1::text = '' OR strpos(
+                lower(concat_ws(' ', first_name, last_name, course_name, title)),
+                lower($1::text)
+            ) > 0)
+              AND ($2::text = '' OR course_id = $2::text)
             ORDER BY due_date, assessment_id
+        `, [search, courseId]);
+
+        const { rows: filterCourses } = await pool.query(`
+            SELECT DISTINCT course_id, course_name
+            FROM StudentAssessmentOverview
+            ORDER BY course_name, course_id
         `);
+
+        const courseOptions = filterCourses.map(course => `
+            <option value="${escapeHtml(course.course_id)}"
+                ${course.course_id === courseId ? 'selected' : ''}>
+                ${escapeHtml(course.course_name)}
+            </option>
+        `).join('');
 
         const { rows: upcoming } = await pool.query(`
             SELECT course_name, title, due_date::text AS due_date,
@@ -141,6 +166,21 @@ app.get('/', async (req, res) => {
                 ` : '<p>No overdue incomplete tasks.</p>'}
 
                 <h2>Student Assessment Overview</h2>
+                <form action="/" method="get">
+                    <label for="q">Search assessments</label>
+                    <input id="q" name="q" type="search" maxlength="100"
+                        value="${escapeHtml(search)}"
+                        placeholder="Student, course, or assessment">
+
+                    <label for="course">Course</label>
+                    <select id="course" name="course">
+                        <option value="">All courses</option>
+                        ${courseOptions}
+                    </select>
+
+                    <button type="submit">Apply filters</button>
+                    <a href="/">Clear filters</a>
+                </form>
                 <p>${assessments.length} assessments</p>
                 <table>
                     <thead>
@@ -152,7 +192,7 @@ app.get('/', async (req, res) => {
                             <th scope="col">Due date</th>
                         </tr>
                     </thead>
-                    <tbody>${assessmentRows}</tbody>
+                    <tbody>${assessmentRows || '<tr><td colspan="5">No assessments match your filters.</td></tr>'}</tbody>
                 </table>
             </body>
             </html>
@@ -334,6 +374,7 @@ app.get('/assessment-reports', async (req, res) => {
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
 
 
