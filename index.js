@@ -33,6 +33,21 @@ app.get('/', async (req, res) => {
             ORDER BY due_date, assessment_id
         `);
 
+        const { rows: overdue } = await pool.query(`
+            SELECT course_name, assessment_title, task_name, days_overdue
+            FROM OverdueIncompleteTasks
+            ORDER BY days_overdue DESC, task_id
+        `);
+
+        const overdueRows = overdue.map(row => `
+            <tr>
+                <td>${escapeHtml(row.course_name)}</td>
+                <td>${escapeHtml(row.assessment_title)}</td>
+                <td>${escapeHtml(row.task_name)}</td>
+                <td>${escapeHtml(row.days_overdue)}</td>
+            </tr>
+        `).join('');
+
         const assessmentRows = assessments.map(row => `
             <tr>
                 <td>${escapeHtml(`${row.first_name} ${row.last_name}`)}</td>
@@ -77,6 +92,21 @@ app.get('/', async (req, res) => {
                     </table>
                 ` : '<p>No assessments are due between today and seven days from now.</p>'}
 
+                <h2>Overdue Incomplete Tasks</h2>
+                ${overdue.length ? `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Course</th>
+                                <th scope="col">Assessment</th>
+                                <th scope="col">Task</th>
+                                <th scope="col">Days overdue</th>
+                            </tr>
+                        </thead>
+                        <tbody>${overdueRows}</tbody>
+                    </table>
+                ` : '<p>No overdue incomplete tasks.</p>'}
+
                 <h2>Student Assessment Overview</h2>
                 <p>${assessments.length} assessments</p>
                 <table>
@@ -103,3 +133,4 @@ app.get('/', async (req, res) => {
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
