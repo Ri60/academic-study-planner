@@ -76,6 +76,7 @@ app.get('/', async (req, res) => {
             </head>
             <body>
                 <h1>Academic Study Planner</h1>
+                <nav><a href="/study-progress">Study Progress</a></nav>
 
                 <h2>Upcoming Assessments</h2>
                 ${upcoming.length ? `
@@ -130,7 +131,59 @@ app.get('/', async (req, res) => {
     }
 });
 
+app.get('/study-progress', async (req, res) => {
+    try {
+        const { rows: courses } = await pool.query(`
+            SELECT student_id, course_name, session_count, total_study_minutes
+            FROM StudyTimePerCourse
+            ORDER BY total_study_minutes DESC, course_id
+        `);
+
+        const courseRows = courses.map(course => `
+            <tr>
+                <td>${escapeHtml(course.student_id)}</td>
+                <td>${escapeHtml(course.course_name)}</td>
+                <td>${escapeHtml(course.session_count)}</td>
+                <td>${escapeHtml(course.total_study_minutes)}</td>
+            </tr>
+        `).join('');
+
+        res.send(`
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Study Progress | Academic Study Planner</title>
+            </head>
+            <body>
+                <nav aria-label="Main navigation">
+                    <a href="/">Assessments</a>
+                </nav>
+                <h1>Study Progress</h1>
+                <h2>Study Time per Course</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Student ID</th>
+                            <th scope="col">Course</th>
+                            <th scope="col">Sessions</th>
+                            <th scope="col">Study minutes</th>
+                        </tr>
+                    </thead>
+                    <tbody>${courseRows || '<tr><td colspan="4">No courses found.</td></tr>'}</tbody>
+                </table>
+            </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('Could not load study progress:', error.message);
+        res.status(500).send('Could not load study progress. Check the server terminal.');
+    }
+});
+
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
