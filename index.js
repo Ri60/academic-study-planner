@@ -252,6 +252,38 @@ app.get('/study-progress', async (req, res) => {
                     <a href="/">Assessments</a>
                 </nav>
                 <h1>Study Progress</h1>
+                <h2>Study Minutes by Course</h2>
+                ${courses.length ? `
+                    <div style="max-width: 760px;">
+                        <canvas id="study-minutes-chart" role="img"
+                            aria-label="Study minutes by course. Exact values are in the table below.">
+                        </canvas>
+                    </div>
+                    <script src="/assets/chart.js"></script>
+                    <script>
+                        const studyCourses = ${JSON.stringify(courses.map(course => ({
+                            label: course.course_name + ' (' + course.student_id + ')',
+                            minutes: Number(course.total_study_minutes)
+                        }))).replace(/</g, '\\u003c')};
+
+                        new Chart(document.getElementById('study-minutes-chart'), {
+                            type: 'bar',
+                            data: {
+                                labels: studyCourses.map(course => course.label),
+                                datasets: [{
+                                    label: 'Study minutes',
+                                    data: studyCourses.map(course => course.minutes),
+                                    backgroundColor: '#2563eb'
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                scales: { x: { beginAtZero: true } }
+                            }
+                        });
+                    </script>
+                ` : '<p>No course study data to chart.</p>'}
+
                 <h2>Study Time per Course</h2>
                 <table>
                     <thead>
@@ -371,9 +403,23 @@ app.get('/assessment-reports', async (req, res) => {
     }
 });
 
+const chartDist = require('node:path').dirname(require.resolve('chart.js'));
+const chartBundle = ['chart.umd.min.js', 'chart.umd.js']
+    .map(file => require('node:path').join(chartDist, file))
+    .find(file => require('node:fs').existsSync(file));
+
+if (!chartBundle) {
+    throw new Error('Could not find the Chart.js browser bundle.');
+}
+
+app.get('/assets/chart.js', (req, res) => {
+    res.sendFile(chartBundle);
+});
+
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
+
 
 
 
