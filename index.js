@@ -19,20 +19,36 @@ function escapeHtml(value) {
 
 app.get('/', async (req, res) => {
     try {
-        const { rows } = await pool.query(`
+        const { rows: assessments } = await pool.query(`
             SELECT first_name, last_name, course_name, title,
                    weight_percentage, due_date::text AS due_date
             FROM StudentAssessmentOverview
             ORDER BY due_date, assessment_id
         `);
 
-        const tableRows = rows.map(row => `
+        const { rows: upcoming } = await pool.query(`
+            SELECT course_name, title, due_date::text AS due_date,
+                   days_remaining
+            FROM UpcomingAssessments
+            ORDER BY due_date, assessment_id
+        `);
+
+        const assessmentRows = assessments.map(row => `
             <tr>
                 <td>${escapeHtml(`${row.first_name} ${row.last_name}`)}</td>
                 <td>${escapeHtml(row.course_name)}</td>
                 <td>${escapeHtml(row.title)}</td>
                 <td>${escapeHtml(row.weight_percentage)}%</td>
                 <td>${escapeHtml(row.due_date)}</td>
+            </tr>
+        `).join('');
+
+        const upcomingRows = upcoming.map(row => `
+            <tr>
+                <td>${escapeHtml(row.course_name)}</td>
+                <td>${escapeHtml(row.title)}</td>
+                <td>${escapeHtml(row.due_date)}</td>
+                <td>${escapeHtml(row.days_remaining)}</td>
             </tr>
         `).join('');
 
@@ -45,8 +61,24 @@ app.get('/', async (req, res) => {
             </head>
             <body>
                 <h1>Academic Study Planner</h1>
+
+                <h2>Upcoming Assessments</h2>
+                ${upcoming.length ? `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Course</th>
+                                <th scope="col">Assessment</th>
+                                <th scope="col">Due date</th>
+                                <th scope="col">Days remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>${upcomingRows}</tbody>
+                    </table>
+                ` : '<p>No assessments are due between today and seven days from now.</p>'}
+
                 <h2>Student Assessment Overview</h2>
-                <p>${rows.length} assessments</p>
+                <p>${assessments.length} assessments</p>
                 <table>
                     <thead>
                         <tr>
@@ -57,13 +89,13 @@ app.get('/', async (req, res) => {
                             <th scope="col">Due date</th>
                         </tr>
                     </thead>
-                    <tbody>${tableRows}</tbody>
+                    <tbody>${assessmentRows}</tbody>
                 </table>
             </body>
             </html>
         `);
     } catch (error) {
-        console.error('Could not query StudentAssessmentOverview:', error.message);
+        console.error('Could not load assessment views:', error.message);
         res.status(500).send('Could not load assessments. Check the server terminal.');
     }
 });
