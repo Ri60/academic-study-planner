@@ -730,6 +730,57 @@ app.use('/api/assessments/export', createAssessmentExportsRouter(pool));
 const createAssessmentRouter = require('./assessment-crud');
 app.use('/api/assessments', createAssessmentRouter(pool));
 
+const createHolidayRouter = require('./holiday-api');
+
+function requireHolidayLogin(req, res, next) {
+    if (!req.session || !req.session.account) {
+        return res.status(401).json({
+            error: 'Please log in first.'
+        });
+    }
+
+    next();
+}
+
+app.use('/api/holidays', requireHolidayLogin, (req, res, next) => {
+    if (req.method === 'POST' && req.path === '/sync') {
+        if (req.session.account.role !== 'admin') {
+            return res.status(403).json({
+                error: 'Only administrators can synchronize holidays.'
+            });
+        }
+    }
+
+    next();
+}, createHolidayRouter(pool));
+// --------------------------------------------------
+// Public Holidays page and browser JavaScript
+// --------------------------------------------------
+const createHolidaysPage = require('./holidays-page');
+
+app.get('/holidays', requireLogin, (req, res) => {
+    res.type('html').send(createHolidaysPage());
+});
+
+app.get('/assets/holidays.js', requireLogin, (req, res) => {
+    res.sendFile(
+        require('node:path').join(__dirname, 'public', 'holidays.js')
+    );
+});
+
+// Allow the frontend to check whether the user is an admin.
+app.get('/api/holidays/admin-status', (req, res) => {
+    if (!req.session || !req.session.account) {
+        return res.status(401).json({
+            error: 'Please log in first.'
+        });
+    }
+
+    res.json({
+        isAdmin: req.session.account.role === 'admin'
+    });
+});
+
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
