@@ -66,9 +66,13 @@ function createManageAssessmentsPage() {
     </nav>
 
     <h1>Manage Assessments</h1>
-    <p>Add, edit, and delete assessments for your courses.</p>
-
+<p>Add, edit, and delete assessments for your courses.</p>
     <section>
+
+    <div style="display: flex; gap: 12px; margin: 20px 0;">
+    <a href="/api/assessments/export/csv">Download CSV</a>
+    <a href="/api/assessments/export/pdf">Download PDF</a>
+</div>
         <h2 id="form-heading">Add Assessment</h2>
 
         <form id="assessment-form">

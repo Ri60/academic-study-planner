@@ -724,8 +724,12 @@ app.get('/assets/manage-assessments.js', requireLogin, (req, res) => {
 });
 
 
+const createAssessmentExportsRouter = require('./assessment-exports');
+app.use('/api/assessments/export', createAssessmentExportsRouter(pool));
+
 const createAssessmentRouter = require('./assessment-crud');
 app.use('/api/assessments', createAssessmentRouter(pool));
+
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
