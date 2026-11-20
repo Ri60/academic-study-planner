@@ -81,6 +81,22 @@ function requireLogin(req, res, next) {
         return res.redirect('/login');
     }
 
+    // Guests may only access explicitly permitted public pages.
+    if (req.session.account.role === 'guest') {
+        const allowedPaths = [
+            '/guest',
+            '/holidays',
+            '/assets/holidays.js'
+        ];
+
+        if (!allowedPaths.includes(req.path)) {
+            return res.status(403).send(
+                'Guest access is read-only. ' +
+                '<a href="/guest">Return to Guest Page</a>.'
+            );
+        }
+    }
+
     next();
 }
 
@@ -98,7 +114,9 @@ function requireAdmin(req, res, next) {
 
 app.get('/login', (req, res) => {
     if (req.session.account) {
-        return res.redirect('/');
+        return res.redirect(
+            req.session.account.role === 'guest' ? '/guest' : '/'
+        );
     }
 
     res.send(`
@@ -126,6 +144,13 @@ app.get('/login', (req, res) => {
 
                 <button type="submit">Log in</button>
             </form>
+            <hr>
+
+<form action="/guest-login" method="post">
+    <button type="submit">Continue as Guest</button>
+</form>
+
+<p>Guest mode provides read-only access to Canadian public holidays.</p>
         </body>
         </html>
     `);
@@ -181,6 +206,61 @@ app.post('/login', async (req, res) => {
         console.error('Login failed:', error.message);
         res.status(500).send('Login failed. Check the server terminal.');
     }
+});
+
+
+// --------------------------------------------------
+// GUEST ACCESS
+// --------------------------------------------------
+
+app.post('/guest-login', (req, res) => {
+    req.session.regenerate(error => {
+        if (error) {
+            console.error('Guest session error:', error.message);
+            return res.status(500).send('Could not start guest session.');
+        }
+
+        req.session.account = {
+            accountId: null,
+            username: 'guest',
+            role: 'guest',
+            studentId: null
+        };
+
+        req.session.save(error => {
+            if (error) {
+                console.error('Guest session save failed:', error.message);
+                return res.status(500).send('Could not start guest session.');
+            }
+
+            res.redirect('/guest');
+        });
+    });
+});
+
+app.get('/guest', requireLogin, (req, res) => {
+    if (req.session.account.role !== 'guest') {
+        return res.redirect('/');
+    }
+
+    res.type('html').send(`
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Guest Access | Academic Study Planner</title>
+        </head>
+        <body>
+            <h1>Academic Study Planner — Guest Mode</h1>
+            <p>Guest access is read-only.</p>
+            <p><a href="/holidays">View Canadian Public Holidays</a></p>
+            <form action="/logout" method="post">
+                <button type="submit">Leave Guest Mode</button>
+            </form>
+        </body>
+        </html>
+    `);
 });
 
 // --------------------------------------------------

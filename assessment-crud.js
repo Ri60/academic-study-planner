@@ -7,12 +7,20 @@ function createAssessmentRouter(pool) {
 
     router.use(express.json({ limit: '20kb' }));
 
+    // Authentication and role authorization
     router.use((req, res, next) => {
         if (!req.session?.account) {
             return res.status(401).json({
                 error: 'Please log in first.'
             });
         }
+
+        if (!['admin', 'user'].includes(req.session.account.role)) {
+            return res.status(403).json({
+                error: 'Guests cannot access private assessments.'
+            });
+        }
+
         next();
     });
 
@@ -65,7 +73,9 @@ function createAssessmentRouter(pool) {
             weight <= 0 ||
             weight > 100
         ) {
-            return { error: 'Weight must be greater than 0 and at most 100.' };
+            return {
+                error: 'Weight must be greater than 0 and at most 100.'
+            };
         }
 
         if (
@@ -74,11 +84,15 @@ function createAssessmentRouter(pool) {
             !Number.isFinite(Date.parse(dueDate)) ||
             new Date(dueDate).toISOString().slice(0, 10) !== dueDate
         ) {
-            return { error: 'Due date must be a valid YYYY-MM-DD date.' };
+            return {
+                error: 'Due date must be a valid YYYY-MM-DD date.'
+            };
         }
 
         if (prereqId !== null && !validId(prereqId)) {
-            return { error: 'Invalid prerequisite assessment ID.' };
+            return {
+                error: 'Invalid prerequisite assessment ID.'
+            };
         }
 
         return {
@@ -105,7 +119,11 @@ function createAssessmentRouter(pool) {
         return result.rowCount > 0;
     }
 
-    async function prerequisiteIsValid(prereqId, courseId, currentId = null) {
+    async function prerequisiteIsValid(
+        prereqId,
+        courseId,
+        currentId = null
+    ) {
         if (prereqId === null) return true;
         if (prereqId === currentId) return false;
 
@@ -190,7 +208,10 @@ function createAssessmentRouter(pool) {
                 });
             }
 
-            if (!(await prerequisiteIsValid(data.prereqId, data.courseId))) {
+            if (!(await prerequisiteIsValid(
+                data.prereqId,
+                data.courseId
+            ))) {
                 return res.status(400).json({
                     error: 'Prerequisite must belong to the same course.'
                 });

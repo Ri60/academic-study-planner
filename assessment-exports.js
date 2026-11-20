@@ -5,13 +5,19 @@ const PDFDocument = require('pdfkit');
 function createAssessmentExportsRouter(pool) {
     const router = express.Router();
 
-    router.use((req, res, next) => {
-        if (!req.session?.account) {
-            return res.status(401).send('Please log in first.');
-        }
-        next();
-    });
+router.use((req, res, next) => {
+    if (!req.session?.account) {
+        return res.status(401).send('Please log in first.');
+    }
 
+    if (!['admin', 'user'].includes(req.session.account.role)) {
+        return res.status(403).send(
+            'Access denied. Guests cannot export private assessments.'
+        );
+    }
+
+    next();
+});
     async function getAssessments(req) {
         const { role, studentId } = req.session.account;
 
