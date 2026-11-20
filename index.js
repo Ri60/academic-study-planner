@@ -705,7 +705,27 @@ app.get('/assets/chart.js', (req, res) => {
 // --------------------------------------------------
 // SERVER
 // --------------------------------------------------
+// Assessment CRUD API
+// Manage Assessments frontend
+const createManageAssessmentsPage = require('./manage-assessments');
 
+app.get('/manage-assessments', requireLogin, (req, res) => {
+    res.type('html').send(createManageAssessmentsPage());
+});
+
+app.get('/assets/manage-assessments.js', requireLogin, (req, res) => {
+    res.sendFile(
+        require('node:path').join(
+            __dirname,
+            'public',
+            'manage-assessments.js'
+        )
+    );
+});
+
+
+const createAssessmentRouter = require('./assessment-crud');
+app.use('/api/assessments', createAssessmentRouter(pool));
 app.listen(3000, '127.0.0.1', () => {
     console.log('Academic Study Planner is running at http://localhost:3000');
 });
