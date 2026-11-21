@@ -803,6 +803,26 @@ app.get('/assets/manage-assessments.js', requireLogin, (req, res) => {
     );
 });
 
+// Study Session CRUD API
+// Manage Study Sessions frontend
+const createManageStudySessionsPage = require('./manage-study-sessions');
+
+app.get('/manage-study-sessions', requireLogin, (req, res) => {
+    res.type('html').send(createManageStudySessionsPage());
+});
+
+app.get('/assets/manage-study-sessions.js', requireLogin, (req, res) => {
+    res.sendFile(
+        require('node:path').join(
+            __dirname,
+            'public',
+            'manage-study-sessions.js'
+        )
+    );
+});
+
+const createStudySessionRouter = require('./study-session-crud');
+app.use('/api/study-sessions', createStudySessionRouter(pool));
 
 const createAssessmentExportsRouter = require('./assessment-exports');
 app.use('/api/assessments/export', createAssessmentExportsRouter(pool));
