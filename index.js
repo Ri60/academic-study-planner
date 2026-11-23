@@ -604,7 +604,6 @@ app.post('/logout', (req, res, next) => {
 // --------------------------------------------------
 // HOMEPAGE
 // --------------------------------------------------
-
 app.get('/', requireLogin, async (req, res) => {
     try {
         const search = typeof req.query.q === 'string'
@@ -1195,7 +1194,7 @@ app.get('/', requireLogin, async (req, res) => {
                         </div>
                         <div class="kpi-card">
                             <div class="kpi-label">Total Assessments</div>
-                            <div class="kpi-value">${assessments.length}</div>
+                            <div id="kpi-total-assessments" class="kpi-value">${assessments.length}</div>
                         </div>
                     </section>
 
@@ -1278,7 +1277,7 @@ app.get('/', requireLogin, async (req, res) => {
                     <section class="card">
                         <div class="card-header">
                             <h2 class="card-title">Student Assessment Overview</h2>
-                            <span class="count-badge">${assessments.length} assessments</span>
+                            <span id="assessment-overview-count" class="count-badge">${assessments.length} assessments</span>
                         </div>
 
                         <form action="/" method="get" class="filter-bar">
@@ -1306,13 +1305,84 @@ app.get('/', requireLogin, async (req, res) => {
                                         <th>Due date</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="assessment-overview-tbody">
                                     ${assessmentRows || '<tr><td colspan="5" class="cell-muted">No assessments match your filters.</td></tr>'}
                                 </tbody>
                             </table>
                         </div>
                     </section>
                 </main>
+
+                <script>
+                    (function () {
+                        const filterForm = document.querySelector('.filter-bar');
+                        if (!filterForm) return;
+
+                        const searchInput = document.getElementById('q');
+                        const courseSelect = document.getElementById('course');
+                        const clearLink = filterForm.querySelector('a[href="/"]');
+
+                        async function applyOverviewFilters(url) {
+                            try {
+                                const response = await fetch(url, {
+                                    headers: { 'X-Requested-With': 'fetch' }
+                                });
+                                if (!response.ok) {
+                                    window.location.href = url;
+                                    return;
+                                }
+
+                                const html = await response.text();
+                                const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                                const newTbody = doc.getElementById('assessment-overview-tbody');
+                                const currentTbody = document.getElementById('assessment-overview-tbody');
+                                if (newTbody && currentTbody) {
+                                    currentTbody.innerHTML = newTbody.innerHTML;
+                                }
+
+                                const newCount = doc.getElementById('assessment-overview-count');
+                                const currentCount = document.getElementById('assessment-overview-count');
+                                if (newCount && currentCount) {
+                                    currentCount.textContent = newCount.textContent;
+                                }
+
+                                const newKpi = doc.getElementById('kpi-total-assessments');
+                                const currentKpi = document.getElementById('kpi-total-assessments');
+                                if (newKpi && currentKpi) {
+                                    currentKpi.textContent = newKpi.textContent;
+                                }
+
+                                window.history.replaceState(null, '', url);
+                            } catch (_) {
+                                window.location.href = url;
+                            }
+                        }
+
+                        filterForm.addEventListener('submit', (event) => {
+                            event.preventDefault();
+                            const params = new URLSearchParams();
+                            const q = searchInput ? searchInput.value.trim() : '';
+                            const course = courseSelect ? courseSelect.value : '';
+
+                            if (q) params.set('q', q);
+                            if (course) params.set('course', course);
+
+                            const queryString = params.toString();
+                            const url = queryString ? '/?' + queryString : '/';
+                            applyOverviewFilters(url);
+                        });
+
+                        if (clearLink) {
+                            clearLink.addEventListener('click', (event) => {
+                                event.preventDefault();
+                                if (searchInput) searchInput.value = '';
+                                if (courseSelect) courseSelect.value = '';
+                                applyOverviewFilters('/');
+                            });
+                        }
+                    })();
+                </script>
             </body>
             </html>
         `);
