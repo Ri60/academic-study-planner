@@ -76,6 +76,104 @@ function verifyPassword(password, storedHash) {
     });
 }
 
+function renderStatusPage({ badge, title, message, actionHref, actionLabel }) {
+    return /* html */ `
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>${escapeHtml(title)} | Academic Study Planner</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                    background-color: #F4ECE4;
+                    color: #1E293B;
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 24px;
+                    line-height: 1.5;
+                }
+                .card {
+                    background-color: #FFFFFF;
+                    border: 1px solid #EAE3DA;
+                    border-radius: 16px;
+                    max-width: 430px;
+                    width: 100%;
+                    padding: 36px 32px;
+                    text-align: center;
+                    box-shadow: 0 12px 32px rgba(10, 38, 71, 0.08);
+                }
+                .badge {
+                    display: inline-block;
+                    background-color: rgba(95, 150, 150, 0.14);
+                    color: #4C7F7F;
+                    font-size: 0.76rem;
+                    font-weight: 600;
+                    letter-spacing: 0.03em;
+                    text-transform: uppercase;
+                    padding: 4px 12px;
+                    border-radius: 999px;
+                    margin-bottom: 12px;
+                }
+                h1 {
+                    font-family: 'Playfair Display', Georgia, serif;
+                    color: #0A2647;
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    margin-bottom: 14px;
+                }
+                .callout {
+                    background-color: #FAF8F5;
+                    border: 1px solid #EAE3DA;
+                    border-left: 3.5px solid #5F9696;
+                    border-radius: 10px;
+                    padding: 12px 14px;
+                    font-size: 0.9rem;
+                    color: #1E293B;
+                    margin-bottom: 22px;
+                }
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    padding: 11px 16px;
+                    font-family: inherit;
+                    font-size: 0.92rem;
+                    font-weight: 600;
+                    color: #FFFFFF;
+                    background-color: #5F9696;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    box-shadow: 0 3px 10px rgba(95, 150, 150, 0.25);
+                    transition: transform 0.18s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+                }
+                .btn:hover {
+                    background-color: #4C7F7F;
+                    transform: translateY(-2px);
+                    box-shadow: 0 7px 18px rgba(95, 150, 150, 0.35);
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <span class="badge">${escapeHtml(badge)}</span>
+                <h1>${escapeHtml(title)}</h1>
+                <div class="callout">${escapeHtml(message)}</div>
+                <a href="${escapeHtml(actionHref)}" class="btn">${escapeHtml(actionLabel)}</a>
+            </div>
+        </body>
+        </html>
+    `;
+}
+
 function requireLogin(req, res, next) {
     if (!req.session.account) {
         return res.redirect('/login');
@@ -90,10 +188,13 @@ function requireLogin(req, res, next) {
         ];
 
         if (!allowedPaths.includes(req.path)) {
-            return res.status(403).send(
-                'Guest access is read-only. ' +
-                '<a href="/guest">Return to Guest Page</a>.'
-            );
+            return res.status(403).send(renderStatusPage({
+                badge: 'Read-Only Session',
+                title: 'Guest Access Only',
+                message: 'Guest accounts can only view Canadian Public Holidays. Sign in with a student or admin account to access planner pages.',
+                actionHref: '/guest',
+                actionLabel: 'Return to Guest Page'
+            }));
         }
     }
 
@@ -102,7 +203,13 @@ function requireLogin(req, res, next) {
 
 function requireAdmin(req, res, next) {
     if (!req.session.account || req.session.account.role !== 'admin') {
-        return res.status(403).send('Access denied.');
+        return res.status(403).send(renderStatusPage({
+            badge: 'Restricted Area',
+            title: 'Admin Access Required',
+            message: 'You do not have permission to view this page.',
+            actionHref: '/',
+            actionLabel: 'Return to Overview'
+        }));
     }
 
     next();
@@ -385,6 +492,27 @@ app.post('/login', async (req, res) => {
 // --------------------------------------------------
 // GUEST ACCESS
 // --------------------------------------------------
+app.post('/guest-login', (req, res) => {
+    req.session.regenerate(error => {
+        if (error) {
+            return res.status(500).send('Could not start guest session.');
+        }
+
+        req.session.account = {
+            accountId: null,
+            username: 'guest',
+            role: 'guest',
+            studentId: null
+        };
+
+        req.session.save(error => {
+            if (error) {
+                return res.status(500).send('Could not start guest session.');
+            }
+            res.redirect('/guest');
+        });
+    });
+});
 
 app.get('/guest', requireLogin, (req, res) => {
     if (req.session.account.role !== 'guest') {
