@@ -121,6 +121,10 @@ function createManageStudySessionsPage() {
             box-shadow: 0 5px 14px rgba(95, 150, 150, 0.35);
         }
 
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
         .btn-outline {
             background-color: #FFFFFF;
             color: var(--teal-hover, #4C7F7F);
@@ -131,6 +135,11 @@ function createManageStudySessionsPage() {
         .btn-outline:hover {
             background-color: var(--teal-soft);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(95, 150, 150, 0.16);
+        }
+
+        .btn-outline:active {
+            transform: translateY(0);
         }
 
         .btn-secondary {
@@ -172,8 +181,8 @@ function createManageStudySessionsPage() {
         /* 2-Column Split Organizer */
         .split-grid {
             display: grid;
-            grid-template-columns: 360px 1fr;
-            gap: 22px;
+            grid-template-columns: 335px 1fr;
+            gap: 20px;
             align-items: start;
         }
 
@@ -182,7 +191,7 @@ function createManageStudySessionsPage() {
             background-color: var(--card-bg);
             border: 1px solid var(--border-subtle);
             border-radius: 14px;
-            padding: 22px 24px;
+            padding: 22px;
             box-shadow: 0 6px 20px rgba(10, 38, 71, 0.045);
         }
 
@@ -272,22 +281,22 @@ function createManageStudySessionsPage() {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 0.9rem;
+            font-size: 0.86rem;
         }
 
         th {
-            font-size: 0.75rem;
+            font-size: 0.73rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             color: var(--text-muted);
-            padding: 10px 12px;
+            padding: 10px 9px;
             border-bottom: 1.5px solid var(--border-subtle);
             white-space: nowrap;
         }
 
         td {
-            padding: 12px;
+            padding: 11px 9px;
             border-bottom: 1px solid #F1ECE4;
             vertical-align: middle;
         }
@@ -318,18 +327,18 @@ function createManageStudySessionsPage() {
         /* Pill Badges */
         .course-pill {
             display: inline-block;
-            padding: 3px 10px;
+            padding: 3px 9px;
             border-radius: 6px;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 600;
             white-space: nowrap;
         }
 
         .duration-pill {
             display: inline-block;
-            padding: 3px 9px;
+            padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 600;
             background-color: var(--teal-soft);
             color: var(--teal-hover);
@@ -338,9 +347,9 @@ function createManageStudySessionsPage() {
 
         .productivity-pill {
             display: inline-block;
-            padding: 3px 9px;
+            padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 600;
             background-color: #FEF3C7;
             color: #92400E;
@@ -354,12 +363,12 @@ function createManageStudySessionsPage() {
         /* Table Action Buttons (Edit & Delete) */
         tbody td:last-child button {
             font-family: inherit;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
-            padding: 5px 11px;
+            padding: 5px 10px;
             border-radius: 6px;
             cursor: pointer;
-            margin-right: 6px;
+            margin-right: 5px;
             transition: transform 0.16s ease, background-color 0.18s ease, border-color 0.18s ease;
         }
 
@@ -387,7 +396,92 @@ function createManageStudySessionsPage() {
             transform: translateY(-1.5px);
         }
 
-        @media (max-width: 920px) {
+        /* Custom Notion Delete Confirmation Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(10, 38, 71, 0.35);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            max-width: 420px;
+            width: 100%;
+            padding: 26px 28px;
+            box-shadow: 0 20px 44px rgba(10, 38, 71, 0.18);
+            animation: modalPop 0.16s ease-out;
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-badge {
+            display: inline-block;
+            background-color: var(--teal-soft);
+            color: var(--teal-hover);
+            font-size: 0.74rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            color: var(--navy);
+            font-size: 1.38rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .modal-callout {
+            background-color: var(--bg-cream);
+            border: 1px solid var(--border-subtle);
+            border-left: 3.5px solid var(--teal);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.88rem;
+            color: var(--text-main);
+            margin-bottom: 22px;
+        }
+
+        .modal-callout strong {
+            color: var(--navy);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-actions .btn {
+            padding: 9px 18px;
+        }
+
+        @media (max-width: 960px) {
             .split-grid {
                 grid-template-columns: 1fr;
             }
@@ -485,6 +579,21 @@ function createManageStudySessionsPage() {
         </div>
     </main>
 
+    <!-- Custom Notion-Styled Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <div class="modal-card">
+            <span class="modal-badge">Confirm Deletion</span>
+            <h3 id="delete-modal-title" class="modal-title">Delete Study Session?</h3>
+            <div class="modal-callout">
+                Delete study session on <strong id="modal-session-date"></strong> for <strong id="modal-session-name"></strong>? This cannot be undone.
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel-btn" class="btn btn-outline">Cancel</button>
+                <button type="button" id="modal-confirm-btn" class="btn btn-primary">Delete Session</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Matching 8-color Notion-inspired course badge palette
         const COURSE_PALETTE = [
@@ -572,6 +681,71 @@ function createManageStudySessionsPage() {
         if (tbodyEl) {
             new MutationObserver(styleSessionRows).observe(tbodyEl, { childList: true });
         }
+
+        // Custom Delete Modal Controller
+        const deleteModal = document.getElementById('delete-modal');
+        const modalDateEl = document.getElementById('modal-session-date');
+        const modalNameEl = document.getElementById('modal-session-name');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        let pendingDeleteBtn = null;
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('open');
+            pendingDeleteBtn = null;
+        }
+
+        document.addEventListener('click', (event) => {
+            const deleteBtn = event.target.closest('#session-rows td:last-child button:last-of-type');
+            if (!deleteBtn) return;
+
+            if (deleteBtn.dataset.confirmed === 'true') {
+                delete deleteBtn.dataset.confirmed;
+                return;
+            }
+
+            event.stopImmediatePropagation();
+            event.preventDefault();
+
+            const row = deleteBtn.closest('tr');
+            const assessmentName = row?.children[1]?.textContent.trim() || 'this assessment';
+            const sessionDate = row?.children[2]?.textContent.trim() || 'this date';
+
+            modalDateEl.textContent = sessionDate;
+            modalNameEl.textContent = '"' + assessmentName + '"';
+            pendingDeleteBtn = deleteBtn;
+            deleteModal.classList.add('open');
+            modalCancelBtn.focus();
+        }, true);
+
+        modalCancelBtn.addEventListener('click', closeDeleteModal);
+
+        deleteModal.addEventListener('click', (event) => {
+            if (event.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && deleteModal.classList.contains('open')) {
+                closeDeleteModal();
+            }
+        });
+
+        modalConfirmBtn.addEventListener('click', () => {
+            const targetBtn = pendingDeleteBtn;
+            closeDeleteModal();
+            if (!targetBtn) return;
+
+            const originalConfirm = window.confirm;
+            window.confirm = () => true;
+            targetBtn.dataset.confirmed = 'true';
+            try {
+                targetBtn.click();
+            } finally {
+                window.confirm = originalConfirm;
+            }
+        });
     </script>
     <script src="/assets/manage-study-sessions.js"></script>
 </body>

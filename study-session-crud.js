@@ -41,7 +41,7 @@ function createStudySessionRouter(pool) {
             return { error: 'Invalid study session data.' };
         }
 
-        const assessmentId = typeof body.course_id === 'string'
+        const assessmentId = typeof body.assessment_id === 'string'
             ? body.assessment_id.trim()
             : '';
 
@@ -53,7 +53,7 @@ function createStudySessionRouter(pool) {
             ? null
             : Number(body.productivity);
 
-        if (!validId(assessmentIdId)) {
+        if (!validId(assessmentId)) {
             return { error: 'Invalid assessment ID.' };
         }
 
@@ -101,7 +101,7 @@ function createStudySessionRouter(pool) {
         };
     }
 
-    async function canAccessAssessment(req, courseId) {
+    async function canAccessAssessment(req, assessmentId) {
         const { role, studentId } = accountFilter(req);
 
         const result = await pool.query(`
@@ -126,7 +126,7 @@ function createStudySessionRouter(pool) {
 
         if (error.code === '23505') {
             return res.status(409).json({
-                error: 'An study session with this ID already exists.'
+                error: 'A study session with this ID already exists.'
             });
         }
 
@@ -305,7 +305,6 @@ function createStudySessionRouter(pool) {
         const { role, studentId } = accountFilter(req);
 
         try {
-
             const result = await pool.query(`
                 DELETE FROM StudySession s
                 USING Assessment a, Course c
@@ -331,6 +330,6 @@ function createStudySessionRouter(pool) {
     });
 
     return router;
- }
-        
- module.exports = createStudySessionRouter;
+}
+
+module.exports = createStudySessionRouter;
